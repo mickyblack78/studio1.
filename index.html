@@ -515,8 +515,9 @@ function triggerQSave() {
             };
             img.src = event.target.result;
         };
+        };
+        });
         
-    });
     document.getElementById('import-file').addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (!file) return;
