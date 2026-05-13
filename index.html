@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+.<!DOCTYPE html> 
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -246,7 +246,7 @@ function init() {
     document.getElementById('loupe3').style.left = '20%';
     updateMasterColor();
 
-    pushUndo('init');
+    for(let i=0;i<2;i++){ appState.vaults[i] = localStorage.getItem('vault'+i); if(appState.vaults[i]) document.getElementById('img-vault-'+i).src = appState.vaults[i]; } pushUndo('init');
 }
 function setMode(mode) {
         document.querySelectorAll('.btn').forEach(btn => btn.classList.remove('active'));
