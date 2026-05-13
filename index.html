@@ -1,53 +1,636 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sovereign Code Pad</title>
-    <style>
-        :root { --bg: #0d1117; --text: #c9d1d9; --accent: #58a6ff; }
-        body { margin: 0; background: var(--bg); color: var(--text); font-family: monospace; height: 100vh; display: flex; flex-direction: column; }
-        #toolbar { padding: 10px; background: #161b22; display: flex; gap: 10px; border-bottom: 1px solid #30363d; flex-wrap: wrap; }
-        textarea { flex-grow: 1; background: transparent; color: var(--text); border: none; padding: 20px; font-size: 14px; resize: none; outline: none; line-height: 1.5; }
-        input, select, button { background: #21262d; color: white; border: 1px solid #30363d; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
-        button:hover { background: var(--accent); }
-    </style>
-</head>
-<body>
-
-<div id="toolbar">
-    <input type="text" id="fileName" placeholder="filename" value="project_code">
-    <select id="extension">
-        <option value=".txt">.txt</option>
-        <option value=".py">.py</option>
-        <option value=".html">.html</option>
-        <option value=".js">.js</option>
-        <option value=".css">.css</option>
-        <option value=".run">.run</option>
-        <option value=".exe">.exe</option>
-        <option value=".pdf">.pdf (as text)</option>
-    </select>
-    <button onclick="saveFile()">Save to Device</button>
-</div>
-
-<textarea id="editor" placeholder="Paste your code here..."></textarea>
-
-<script>
-    function saveFile() {
-        const text = document.getElementById('editor').value;
-        const name = document.getElementById('fileName').value;
-        const ext = document.getElementById('extension').value;
-        const blob = new Blob([text], { type: "text/plain" });
-        const link = document.createElement("a");
-        
-        link.download = name + ext;
-        link.href = window.URL.createObjectURL(blob);
-        link.onclick = (e) => {
-            setTimeout(() => { window.URL.revokeObjectURL(link.href); }, 1500);
-        };
-        link.click();
+1: <!DOCTYPE html> 
+2: <html lang="en">
+3: <head>
+4:     <meta charset="UTF-8">
+5:     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+6:     <title>STUDIO1</title>
+7:     <style>
+8:         :root {
+9:             --neon-cyan: #00ffff;
+10:             --electric-blue: #2e5bff;
+11:             --neon-glow: rgba(0, 255, 255, 0.4);
+12:             --success-green: #00ff00;
+13:             --bg: #000000;
+14:             --panel: rgba(10, 10, 10, 0.98);
+15:             --safe-zone: 60px;
+16:         }
+17: 
+18:         * {
+19:             margin: 0; padding: 0; box-sizing: border-box;
+20:             -webkit-touch-callout: none; -webkit-user-select: none;
+21:             user-select: none; touch-action: none;
+22:         }
+23: 
+24:         body { background: var(--bg); height: 100vh; width: 100vw; overflow: hidden; font-family: monospace; }
+25: 
+26:         /* VIEWPORT FOR PAN/ZOOM */
+27:         #viewport {
+28:             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+29:             transform-origin: 0 0; 
+30:         }
+31: 
+32:         canvas { position: absolute; top: 0; left: 0; display: block; }
+33:         #main-canvas { z-index: 10; } /* Base Picture */
+34:         #temp-canvas { z-index: 20; } /* Edits / Strokes */
+35: 
+36:         .dock {
+37:             position: fixed; bottom: var(--safe-zone); left: 50%;
+38:             transform: translateX(-50%); z-index: 1000;
+39:             display: flex; gap: 15px; padding: 15px 25px;
+40:             background: var(--panel); border: 1px solid #333;
+41:             border-radius: 60px; box-shadow: 0 0 20px rgba(0,0,0,0.8);
+42:         }
+43: 
+44:         .btn {
+45:             width: 65px; height: 50px; border-radius: 25px;
+46:             border: 1px solid #333; background: #rainbow;
+47:             display: flex; align-items: center; justify-content: center;
+48:             color: #666; font-size: 11px; font-weight: 900; transition: 0.2s;
+49:             cursor: pointer; text-transform: uppercase;
+50:         }
+51: 
+52:         /* STRICT HIGHLIGHT STATES */
+53:         .btn.active { border-color: var(--neon-cyan); color: var(--neon-cyan); box-shadow: 0 0 35px var(--neon-glow); }
+54:         .btn.qsave-active { border-color: var(--electric-blue) !important; color: var(--electric-blue) !important; box-shadow: 0 0 25px var(--electric-blue) !important; }
+55:         .btn.success { border-color: var(--success-green) !important; color: var(--success-green) !important; box-shadow: 0 0 35px var(--success-green) !important; }
+56: 
+57:         .overlay {
+58:             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+59:             background: rgba(0,0,0,0.95); z-index: 2000; display: none;
+60:             flex-direction: column; align-items: center; justify-content: center;
+61:         }
+62: 
+63:         .grid-3x5 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; width: 90%; max-width: 400px; }
+64:         .grid-btn { aspect-ratio: 1; background: #111; border: 1px solid #333; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 10px; cursor: pointer; }
+65:         .grid-btn:active { background: var(--neon-cyan); color: var(--neon-cyan); }
+66: 
+67:         .menu-list { width: 80%; max-width: 300px; display: flex; flex-direction: column; gap: 10px; }
+68:         .menu-row { display: flex; gap: 10px; width: 100%; }
+69:         .menu-item { flex: 1; padding: 20px; background: #111; border: 1px solid #444; color: white; text-align: center; font-size: 12px; cursor: pointer; }
+70: 
+71:         .recent-colors { display: flex; gap: 5px; margin-top: 20px; width: 90%; max-width: 400px; overflow-x: auto; padding: 10px 0; border-top: 1px solid #333;}
+72:         .color-swatch { width: 30px; height: 30px; border-radius: 5px; border: 1px solid #fff; flex-shrink: 0; cursor: pointer;}
+73: 
+74:         /* VAULT LAYOUT */
+75:         .vault-scroll-wrap { display: flex; flex-direction: column; gap: 20px; align-items: center; width: 100%; max-height: 90vh; overflow-y: auto; padding-bottom: 20px; }
+76:         .vault-container { width: 90%; max-width: 300px; border: 1px solid #333; background: #050505; display: flex; flex-direction: column; }
+77:         .vault-box { width: 100%; height: 25vh; position: relative; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid #333; background: #000; }
+78:         .vault-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
+79:         .vault-label { position: absolute; top: 5px; left: 5px; font-size: 10px; color: #888; font-weight: bold; }
+80:         .vault-action-bar { display: flex; width: 100%; height: 40px; }
+81:         .vault-action-bar div { flex: 1; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #fff; border-right: 1px solid #333; cursor: pointer; }
+82:         .vault-action-bar div:last-child { border-right: none; }
+83:         .vault-action-bar div:active { background: var(--neon-cyan); color: #000; }
+84: 
+85:         /* SLIDERS (Top to Bottom) */
+86:         .sliders-wrap { display: flex; flex-direction: column; gap: 30px; width: 90%; max-width: 400px; pointer-events: auto; }
+87:         .bar-container { position: relative; height: 30px; width: 100%; }
+88:         .bar-bg { position: absolute; top: 11px; width: 100%; height: 8px; border-radius: 4px; border: 1px solid #444; }
+89:         #bar3-bg { background: linear-gradient(to right, #000, gray, #fff); } /* SIZE */
+90:         #bar2-bg { background: linear-gradient(to right, red, yellow, lime, cyan, blue, magenta, red); } /* SPECTRUM 2 */
+91:         #bar1-bg { background: linear-gradient(to right, #000, red, yellow, lime, cyan, blue, magenta, red, #fff); } /* BLACK TO WHITE SPECTRUM */
+92:         .loupe { position: absolute; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; top: 5px; transform: translateX(-50%); display: flex; align-items: center; justify-content: center; font-size: 0px; background: #888; cursor: pointer; box-shadow: 0 0 10px rgba(0,0,0,0.5);}
+93:     </style>
+94: </head>
+95: <body>
+96: 
+97: <!-- Hidden File Loaders -->
+98: <input type="file" id="load-file" accept="image/*" style="display: none;">
+99: <input type="file" id="import-file" accept="image/*" style="display: none;">
+100: <input type="file" id="sticker-file" accept="image/*" style="display: none;">
+101: 
+102: <!-- Canvas Container for Pan/Zoom -->
+103: <div id="viewport">
+104:     <canvas id="main-canvas"></canvas>
+105:     <canvas id="temp-canvas"></canvas>
+106: </div>
+107: 
+108: <!-- DOCK -->
+109: <div class="dock" id="main-dock">
+110:     <div class="btn" id="btn-menu" onclick="handleDockTap('menu')">MENU</div>
+111:     <div class="btn" id="btn-qsave" onclick="triggerQSave()">QSAVE</div>
+112:     <div class="btn" id="btn-color" onclick="handleDockTap('color')">COLOR</div>
+113:     <div class="btn" id="btn-edit" onclick="handleDockTap('edit')">EDIT</div>
+114: </div>
+115: 
+116: <!-- MENU OVERLAY -->
+117: <div class="overlay" id="overlay-menu">
+118:     <div class="menu-list">
+119:         <div class="menu-row">
+120:             <div class="menu-item" onclick="triggerSave()">SAVE</div>
+121:             <div class="menu-item" onclick="triggerSave()">SAVE AS</div>
+122:         </div>
+123:         <div class="menu-row">
+124:             <div class="menu-item" onclick="document.getElementById('load-file').click()">LOAD</div>
+125:             <div class="menu-item" onclick="document.getElementById('import-file').click()">IMPORT</div>
+126:         </div>
+127:         <div class="menu-item" style="background: var(--neon-cyan); color: #000;" onclick="switchOverlay('menu', 'tools')">TOOLS</div>
+128:         <div class="menu-item" onclick="switchOverlay('menu', 'vault')">VAULTS</div>
+129:     </div>
+130: </div>
+131: 
+132: <!-- TOOLS OVERLAY -->
+133: <div class="overlay" id="overlay-tools">
+134:     <div class="grid-3x5">
+135:         <div class="grid-btn" onclick="applyTool('STICKER')">STICKER</div>
+136:         <div class="grid-btn" onclick="applyTool('ERASER')">ERASER</div>
+137:         <div class="grid-btn" onclick="applyTool('UNDO')">UNDO</div>
+138:         <div class="grid-btn" onclick="applyTool('SMOOTH')">SMOOTH</div>
+139:         <div class="grid-btn" onclick="applyTool('TEXT')">TEXT</div>
+140:         <div class="grid-btn" onclick="applyTool('CUT')">CUT</div>
+141:         <div class="grid-btn" onclick="applyTool('COPY')">COPY</div>
+142:         <div class="grid-btn" onclick="applyTool('PASTE')">PASTE</div>
+143:         <div class="grid-btn" onclick="applyTool('FILL')">FILL</div>
+144:         <div class="grid-btn" onclick="applyTool('PICKER')">PICKER</div>
+145:         <div class="grid-btn" onclick="applyTool('PH...AI')">PH...AI</div>
+146:         <div class="grid-btn">PH_12</div>
+147:     </div>
+148:     <div class="recent-colors"
+149: id="recent-colors-box"></div>
+150: <!-- COLOR OVERLAY -->
+151: <div class="overlay" id="overlay-color" style="background: none; pointer-events: none;">
+152:     <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 40px; pointer-events: auto;">
+153:         <div id="brush-preview" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #fff;"></div>
+154:     </div>
+155:     
+156:     <div class="sliders-wrap">
+157:         <!-- TOP: Size -->
+158:         <div class="bar-container" id="bar3-container">
+159:             <div style="font-size: 10px; color: #888; margin-bottom: 5px;">SIZE</div>
+160:             <div class="bar-bg" id="bar3-bg"></div>
+161:             <div class="loupe" id="loupe3"></div>
+162:         </div>
+163:         <!-- MIDDLE: SPECTRUMS -->
+164:         <div class="bar-container" id="bar2-container">
+165:             <div style="font-size: 10px; color: #888; margin-bottom: 5px;">SPECTRUMS</div>
+166:             <div class="bar-bg" id="bar2-bg"></div>
+167:             <div class="loupe" id="loupe2"></div>
+168:         </div>
+169:         <!-- BOTTOM: SPECTRUM -->
+170:         <div class="bar-container" id="bar1-container">
+171:             <div style="font-size: 10px; color: #888; margin-bottom: 5px;">SPECTRUM</div>
+172:             <div class="bar-bg" id="bar1-bg"></div>
+173:             <div class="loupe" id="loupe1"></div>
+174:         </div>
+175:     </div>
+176: </div>
+177: 
+178: <!-- VAULT OVERLAY -->
+179: <div class="overlay" id="overlay-vault">
+180:     <div class="vault-scroll-wrap">
+181:         <!-- Vault 1 -->
+182:         <div class="vault-container">
+183:             <div class="vault-box">
+184:                 <span class="vault-label">VAULT 1</span>
+185:                 <img id="img-vault-0">
+186:             </div>
+187:             <div class="vault-action-bar">
+188:                 <div onclick="vaultAction(0, 'LOAD')">LOAD</div>
+189:                 <div onclick="vaultAction(0, 'SAVEAS')">SAVE AS</div>
+190:                 <div onclick="setMode(null)">EXIT</div>
+191:             </div>
+192:         </div>
+193:         <!-- Vault 2 -->
+194:         <div class="vault-container">
+195:             <div class="vault-box">
+196:                 <span class="vault-label">VAULT 2</span>
+197:                 <img id="img-vault-1">
+198:             </div>
+199:             <div class="vault-action-bar">
+200:                 <div onclick="vaultAction(1, 'LOAD')">LOAD</div>
+201:                 <div onclick="vaultAction(1, 'SAVEAS')">SAVE AS</div>
+202:                 <div onclick="setMode(null)">EXIT</div>
+203:             </div>
+204:         </div>
+205:     </div>
+206: </div>
+207: 
+208: <script>
+209: const appState = {
+210:     activeMode: null,
+211:     activeTool: null,
+212:     loadedName: "",
+213:     penColor: '',
+214:     penSize: 20,
+215:     p1: 0.5,
+216:     p2: 0.5,
+217:     recentColors: [],
+218:     undoStack:[],
+219:     vaults: [null, null],
+220:     vaultIdx: 0,
+221:     dpr: window.devicePixelRatio || 1,
+222:     panX: 0,
+223:     panY: 0,
+224:     scale: 1
+225: };
+226: 
+227: const viewport = document.getElementById('viewport');
+228: const main = document.getElementById('main-canvas');
+229: const temp = document.getElementById('temp-canvas');
+230: const mctx = main.getContext('2d');
+231: const tctx = temp.getContext('2d');
+232: 
+233: function init() {
+234:     main.width = temp.width = window.innerWidth * appState.dpr;
+235:     main.height = temp.height = window.innerHeight * appState.dpr;
+236:     main.style.width = temp.style.width = window.innerWidth + 'px';
+237:     main.style.height = temp.style.height = window.innerHeight + 'px';
+238:     
+239:     mctx.scale(appState.dpr, appState.dpr);
+240:     tctx.scale(appState.dpr, appState.dpr);
+241:     mctx.lineCap = tctx.lineCap = 'round';
+242:     mctx.lineJoin = tctx.lineJoin = 'round';
+243:     
+244:     document.getElementById('loupe1').style.left = '50%';
+245:     document.getElementById('loupe2').style.left = '50%';
+246:     document.getElementById('loupe3').style.left = '20%';
+247:     updateMasterColor();
+248: 
+249:     pushUndo('init');
+250: }
+251: function setMode(mode) {
+252:         document.querySelectorAll('.btn').forEach(btn => btn.classList.remove('active'));
+253:         document.querySelectorAll('.overlay').forEach(overlay => overlay.style.display = 'none');
+254:         appState.activeMode = mode;
+255: 
+256:         if (mode === 'menu') {
+257:             document.getElementById('btn-menu').classList.add('active');
+258:             document.getElementById('overlay-menu').style.display = 'flex';
+259:         } else if (mode === 'color') {
+260:             document.getElementById('btn-color').classList.add('active');
+261:             document.getElementById('overlay-color').style.display = 'flex';
+262:         } else if (mode === 'edit') {
+263:             document.getElementById('btn-edit').classList.add('active');
+264:             appState.activeTool = 'PAINTBRUSH'; // Edit always equips paintbrush
+265:         } else {
+266:             appState.activeTool = null; // Clears everything when closed
+267:         }
+268:     }
+269: 
+270:     function handleDockTap(mode) {
+271:         const menuBtn = document.getElementById('btn-menu');
+272:         
+273:         // Check if Menu currently has a Tool active
+274:         if (mode === 'menu' && menuBtn.innerText !== 'MENU') {
+275:             menuBtn.innerText = 'MENU';
+276:             appState.activeTool = null;
+277:             setMode('menu'); 
+278:             switchOverlay('menu', 'tools'); // Reopen tool pathway
+279:             return;
+280:         }
+281: 
+282:         if (appState.activeMode === mode) {
+283:             setMode(null); // Tap active to close it
+284:             if (mode === 'menu') menuBtn.innerText = 'MENU';
+285:         } else {
+286:             // STRICT EXCLUSIVE CHECK: You must close the open panel before opening another
+287:             if (appState.activeMode !== null) return;
+288:             setMode(mode);
+289:         }
+290:     }
+291: 
+292:     function applyTool(toolName) {
+293:         if (toolName === 'UNDO') { performUndo(); return; }
+294:         
+295:         appState.activeTool = toolName;
+296:         document.getElementById('btn-menu').innerText = toolName;
+297:         document.querySelectorAll('.overlay').forEach(overlay => overlay.style.display = 'none');
+298:         
+299:         if (toolName === 'STICKER') {
+300:             document.getElementById('sticker-file').click();
+301:         }
+302:     }
+303: 
+304:     function switchOverlay(from, to) {
+305:         document.getElementById(`overlay-${from}`).style.display = 'none';
+306:         document.getElementById(`overlay-${to}`).style.display = 'flex';
+307:     }
+308: 
+309:     let isPanning = false;
+310:     let startX = 0, startY = 0, initialDist = 0;
+311:     let pinchCenterX = 0, pinchCenterY = 0;
+312:     let isPanning = false;
+313:     let startX = 0, startY = 0, initialDist = 0;
+314:     let pinchCenterX = 0, pinchCenterY = 0;
+315:     let isDrawing = false;
+316:     let lastX = 0, lastY = 0;
+317: 
+318:     function getCoords(e) {
+319:         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+320:         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+321:         const x = (clientX - appState.panX) / appState.scale;
+322:         const y = (clientY - appState.panY) / appState.scale;
+323:         return { x, y };
+324:     }
+325: 
+326:     viewport.addEventListener('touchstart', (e) => {
+327:         const canDraw = (appState.activeMode === 'edit') || (appState.activeMode === 'menu' && appState.activeTool === 'ERASER');
+328:         
+329:         if (canDraw && e.touches.length === 1) {
+330:             isDrawing = true;
+331:             const {x, y} = getCoords(e);
+332:             lastX = x; lastY = y;
+333:             return;
+334:         }
+335: 
+336:         if (appState.activeMode === 'edit' || (appState.activeMode === 'menu' && appState.activeTool && appState.activeTool !== 'STICKER')) return; 
+337:         
+338:         if (e.touches.length === 1) {
+339:             isPanning = true;
+340:             startX = e.touches[0].clientX - appState.panX;
+341:             startY = e.touches[0].clientY - appState.panY;
+342:         } else if (e.touches.length === 2) {
+343:             isPanning = false;
+344:             initialDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+345:             pinchCenterX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+346:             pinchCenterY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+347:         }
+348:     }, {passive: false});
+349: 
+350:     viewport.addEventListener('touchmove', (e) => {
+351:         e.preventDefault();
+352: 
+353:         if (isDrawing) {
+354:             const {x, y} = getCoords(e);
+355:             tctx.lineCap = 'round';
+356:             if (appState.activeMode === 'menu' && appState.activeTool === 'ERASER') {
+357:                 tctx.globalCompositeOperation = 'destination-out';
+358:             } else {
+359:                 tctx.globalCompositeOperation = 'source-over';
+360:                 tctx.strokeStyle = appState.penColor;
+361:             }
+362:             tctx.lineWidth = appState.penSize / appState.scale;
+363:             tctx.beginPath(); tctx.moveTo(lastX, lastY); tctx.lineTo(x, y); tctx.stroke();
+364:             lastX = x; lastY = y;
+365:             return;
+366:         }
+367: 
+368:         if (appState.activeMode === 'edit' || (appState.activeMode === 'menu' && appState.activeTool && appState.activeTool !== 'STICKER')) return;
+369: 
+370:         if (e.touches.length === 1 && isPanning) {
+371:             appState.panX = e.touches[0].clientX - startX;
+372:             appState.panY = e.touches[0].clientY - startY;
+373:         } else if (e.touches.length === 2) {
+374:             const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+375:             if(initialDist > 0) {
+376:                 const scaleRatio = (dist / initialDist);
+377:                 const newScale = Math.min(Math.max(0.2, appState.scale * scaleRatio), 15); // Better zoom depth
+378: 
+379:                 appState.panX = pinchCenterX - (pinchCenterX - appState.panX) * (newScale / appState.scale);
+380:                 appState.panY = pinchCenterY - (pinchCenterY - appState.panY) * (newScale / appState.scale);
+381:                 appState.scale = newScale;
+382:                 initialDist = dist;
+383:                 pinchCenterX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+384:                 pinchCenterY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+385:             }
+386:         }
+387:         viewport.style.transform = `translate(${appState.panX}px, ${appState.panY}px) scale(${appState.scale})`;
+388:     }, {passive: false});
+389: 
+390:     window.addEventListener('touchend', () => {
+391:         if (isDrawing) { isDrawing = false; pushUndo('stroke'); addRecentColor(appState.penColor); }
+392:         isPanning = false;
+393:     });
+394:     function pushUndo(type) {
+395:         if (appState.undoStack.length >= 10) appState.undoStack.shift();
+396:         appState.undoStack.push({
+397:             type: type,
+398:             tempData: temp.toDataURL(),
+399:             mainData: main.toDataURL() 
+400:         });
+401:     }
+402: 
+403:     function performUndo() {
+404:         if (appState.undoStack.length <= 1) { setMode(null); return; }
+405:         const prevState = appState.undoStack[appState.undoStack.length - 1];
+406:         const mImg = new Image();
+407:         mImg.onload = () => {
+408:             mctx.clearRect(0,0, main.width, main.height);
+409:             mctx.drawImage(mImg, 0, 0, main.width/appState.dpr, main.height/appState.dpr);
+410:             const tImg = new Image();
+411:             tImg.onload = () => {
+412:                 tctx.clearRect(0,0, temp.width, temp.height);
+413:                 tctx.drawImage(tImg, 0, 0, temp.width/appState.dpr, temp.height/appState.dpr);
+414:             };
+415:             tImg.src = prevState.tempData;
+416:         };
+417:         mImg.src = prevState.mainData;
+418:         setMode(null); 
+419:     }
+420: function triggerQSave() {
+421:         mctx.drawImage(temp, 0, 0, main.width/appState.dpr, main.height/appState.dpr);
+422:         tctx.clearRect(0, 0, temp.width, temp.height);
+423:         pushUndo('qsave');
+424:         appState.vaults[appState.vaultIdx] = main.toDataURL();
+425:         document.getElementById(`img-vault-${appState.vaultIdx}`).src = appState.vaults[appState.vaultIdx];
+426:         appState.vaultIdx = (appState.vaultIdx + 1) % 2; 
+427:         const qBtn = document.getElementById('btn-qsave');
+428:         qBtn.classList.add('qsave-active');
+429:         setTimeout(() => qBtn.classList.remove('qsave-active'), 2000);
+430:     }
+431: 
+432:     function vaultAction(idx, action) {
+433:         const data = appState.vaults[idx];
+434:         if (!data) return;
+435:         if (action === 'LOAD') {
+436:             const img = new Image();
+437:             img.onload = () => {
+438:                 mctx.clearRect(0,0, main.width, main.height);
+439:                 mctx.drawImage(img, 0, 0, main.width/appState.dpr, main.height/appState.dpr);
+440:                 tctx.clearRect(0, 0, temp.width, temp.height);
+441:                 pushUndo('load');
+442:                 setMode(null);
+443:             };
+444:             img.src = data;
+445:         } else if (action === 'SAVEAS') {
+446:             const link = document.createElement('a');
+447:             link.download = `Vault_${idx+1}.png`;
+448:             link.href = data;
+449:             link.click();
+450:         }
+451:     }
+452: 
+453:     document.getElementById('load-file').addEventListener('change', function(e) {
+454:         const file = e.target.files[0];
+455:         if (!file) return;
+456:         appState.loadedName = file.name.split('.')[0];
+457:         const reader = new FileReader();
+458:         reader.onload = function(event) {
+459:             const img = new Image();
+460:             img.onload = () => {
+461:                 mctx.clearRect(0,0, main.width, main.height);
+462:                 mctx.drawImage(img, 0,0, main.width/appState.dpr, main.height/appState.dpr);
+463:                 pushUndo('load');
+464:                 setMode(null);
+465:             };
+466:             img.src = event.target.result;
+467:         };
+468:         reader.readAsDataURL(file);
+469:         e.target.value = '';
+470:     });
+471: 
+472:     document.getElementById('import-file').addEventListener('change', function(e) {
+473:         const file = e.target.files[0];
+474:         if (!file) return;
+475:         const reader = new FileReader();
+476:         reader.onload = function(event) {
+477:             const img = new Image();
+478:             img.onload = () => {
+479:                 const viewW = window.innerWidth / appState.scale;
+480:                 const viewH = window.innerHeight / appState.scale;
+481:                 const ratio = Math.min(viewW / img.width, viewH / img.height) * 0.8; 
+482:                 const drawW = img.width * ratio;
+483:                 const drawH = img.height * ratio;
+484:                 const drawX = (-appState.panX / appState.scale) + (viewW/2 - drawW/2);
+485:                 const drawY = (-appState.panY / appState.scale) + (viewH/2 - drawH/2);
+486:                 tctx.drawImage(img, drawX, drawY, drawW, drawH);
+487:                 pushUndo('import');
+488:                 setMode(null);
+489:             };
+490:             img.src = event.target.result;
+491:         };
+492:         reader.readAsDataURL(file);
+493:         e.target.value = '';
+494:     });
+495: 
+496:     document.getElementById('sticker-file').addEventListener('change', function(e) {
+497:         const file = e.target.files[0];
+498:         if (!file) return;
+499:         const reader = new FileReader();
+500:         reader.onload = function(event) {
+501:             const img = new Image();
+502:             img.onload = () => {
+503:                 const viewW = window.innerWidth / appState.scale;
+504:                 const viewH = window.innerHeight / appState.scale;
+505:                 const ratio = Math.min(viewW / img.width, viewH / img.height); 
+506:                 const drawW = img.width * ratio;
+507:                 const drawH = img.height * ratio;
+508:                 const drawX = (-appState.panX / appState.scale) + (viewW/2 - drawW/2);
+509:                 const drawY = (-appState.panY / appState.scale) + (viewH/2 - drawH/2);
+510:                 tctx.drawImage(img, drawX, drawY, drawW, drawH);
+511:                 pushUndo('sticker');
+512:             };
+513:             img.src = event.target.result;
+514:         document.getElementById('sticker-file').addEventListener('change', function(e) {
+515:         const file = e.target.files[0];
+516:         if (!file) return;
+517:         const reader = new FileReader();
+518:         reader.onload = function(event) {
+519:             const img = new Image();
+520:             img.onload = () => {
+521:                 const viewW = window.innerWidth / appState.scale;
+522:                 const viewH = window.innerHeight / appState.scale;
+523:                 // Fits to the exact current screen zoom constraints
+524:                 const ratio = Math.min(viewW / img.width, viewH / img.height); 
+525:                 const drawW = img.width * ratio;
+526:                 const drawH = img.height * ratio;
+527:                 const drawX = (-appState.panX / appState.scale) + (viewW/2 - drawW/2);
+528:                 const drawY = (-appState.panY / appState.scale) + (viewH/2 - drawH/2);
+529: 
+530:                 tctx.drawImage(img, drawX, drawY, drawW, drawH);
+531:                 pushUndo('sticker');
+532:             };
+533:             img.src = event.target.result;
+534:         };
+535:         reader.readAsDataURL(file);
+536:         e.target.value = '';
+537:     });
+538:         reader.readAsDataURL(file);
+539:         e.target.value = '';
+540:     });
+541:         function hslToRgb(h, s, l) {
+        h /= 360; s /= 100; l /= 100;
+        let r, g, b;
+        if(s === 0) r=g=b=l;
+        else {
+            const hue2rgb = (p,q,t) => {
+                if(t<0) t+=1; if(t>1) t-=1;
+                if(t<1/6) return p+(q-p)*6*t;
+                if(t<1/2) return q;
+                if(t<2/3) return p+(q-p)*(2/3-t)*6;
+                return p;
+            };
+            const q = l<0.5 ? l*(1+s) : l+s-l*s;
+            const p = 2*l-q;
+            r = hue2rgb(p,q,h+1/3); g = hue2rgb(p,q,h); b = hue2rgb(p,q,h-1/3);
+        }
+        return [Math.round(r*255), Math.round(g*255), Math.round(b*255)];
     }
-</script>
 
-</body>
-</html>
+    function updateMasterColor() {
+        let p1 = appState.p1, p2 = appState.p2;
+        
+        // Bar 1: Pure Black -> Spectrum -> Pure White
+        let h1=0, l1=50;
+        if(p1 < 0.15) { l1 = (p1/0.15)*50; h1=0; }
+        else if(p1 > 0.85) { l1 = 50 + ((p1-0.85)/0.15)*50; h1=360; }
+        else { h1 = ((p1-0.15)/0.7)*360; l1=50; }
+
+        let c1 = hslToRgb(h1, 100, l1);
+        let c2 = hslToRgb(p2*360, 100, 50);
+
+        // Mix the two arrays
+        let r = Math.floor((c1[0]+c2[0])/2);
+        let g = Math.floor((c1[1]+c2[1])/2);
+        let b = Math.floor((c1[2]+c2[2])/2);
+
+        appState.penColor = `rgb(${r}, ${g}, ${b})`;
+
+        const bPrev = document.getElementById('brush-preview');
+        bPrev.style.backgroundColor = appState.penColor;
+        bPrev.style.width = bPrev.style.height = `${appState.penSize}px`;
+
+        const cBtn = document.getElementById('btn-color');
+        cBtn.style.color = appState.penColor;
+        cBtn.style.borderColor = appState.penColor;
+    }
+
+    function addRecentColor(colorStr) {
+        if (appState.recentColors[0] === colorStr) return;
+        appState.recentColors = appState.recentColors.filter(c => c !== colorStr);
+        appState.recentColors.unshift(colorStr);
+        if(appState.recentColors.length > 10) appState.recentColors.pop();
+        
+        const box = document.getElementById('recent-colors-box');
+        box.innerHTML = '';
+        appState.recentColors.forEach(color => {
+            const div = document.createElement('div');
+            div.className = 'color-swatch';
+            div.style.background = color;
+            div.onclick = () => {
+                appState.penColor = color;
+                document.getElementById('btn-color').style.color = color;
+                document.getElementById('btn-color').style.borderColor = color;
+                setMode('edit'); 
+            };
+            box.appendChild(div);
+        });
+    }
+
+    function setupSlider(el, type) {
+        let isDragging = false;
+        el.addEventListener('touchstart', (e) => { isDragging = true; e.stopPropagation(); });
+        
+        window.addEventListener('touchmove', (e) => {
+            if (!isDragging) return;
+            const rect = el.parentElement.getBoundingClientRect();
+            let percent = Math.max(0, Math.min(1, (e.touches[0].clientX - rect.left) / rect.width));
+            el.style.left = `${percent * 100}%`;
+            
+            if(type === 'bar1') appState.p1 = percent;
+            else if (type === 'bar2') appState.p2 = percent;
+            else if (type === 'size') appState.penSize = Math.max(1, percent * 100);
+            
+            updateMasterColor();
+        }, { passive: false });
+        window.addEventListener('touchend', () => isDragging = false);
+    }
+
+    setupSlider(document.getElementById('loupe1'), 'bar1');
+    setupSlider(document.getElementById('loupe2'), 'bar2');
+    setupSlider(document.getElementById('loupe3'), 'size');
+621: 
+622:     window.addEventListener('load', init);
+623: </script>
+624: </body>
+625: </html>
