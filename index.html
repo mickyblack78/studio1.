@@ -330,7 +330,30 @@ function setMode(mode) {
             return;
         }
 
-        if (appState.activeMode === 'edit' || (appState.activeMode === 'menu' && appState.activeTool && appState.activeTool !== 'STICKER')) return; 
+        const tool = appState.activeTool;
+        if (appState.activeMode === 'menu' && tool && tool !== 'STICKER') {
+            const {x, y} = getCoords(e);
+            if (tool === 'PICKER') {
+                const p = mctx.getImageData(x*appState.dpr, y*appState.dpr, 1, 1).data;
+                appState.penColor = `rgb(${p[0]},${p[1]},${p[2]})`;
+                document.getElementById('btn-color').style.color = appState.penColor;
+                setMode(null);
+            } else if (tool === 'TEXT') {
+                const txt = prompt("Text:");
+                if (txt) { tctx.font = `${appState.penSize*2}px monospace`; tctx.fillStyle = appState.penColor; tctx.fillText(txt, x, y); pushUndo('text'); }
+                setMode(null);
+            } else if (tool === 'PASTE' && window.clipboard) {
+                tctx.putImageData(window.clipboard, x*appState.dpr, y*appState.dpr); pushUndo('paste'); setMode(null);
+            } else if (tool === 'FILL') {
+                tctx.fillStyle = appState.penColor; tctx.fillRect(0,0, temp.width, temp.height); pushUndo('fill'); setMode(null);
+            } else if (tool === 'CUT' || tool === 'COPY') {
+                window.dragX = x; window.dragY = y; isDrawing = true;
+            } else if (tool === 'SMOOTH') {
+                isDrawing = true; lastX = x; lastY = y;
+            }
+            return;
+        }
+        if (appState.activeMode === 'edit') return;
         
         if (e.touches.length === 1) {
             isPanning = true;
@@ -362,7 +385,23 @@ function setMode(mode) {
             return;
         }
 
-        if (appState.activeMode === 'edit' || (appState.activeMode === 'menu' && appState.activeTool && appState.activeTool !== 'STICKER')) return;
+        const tool = appState.activeTool;
+        if (appState.activeMode === 'menu' && tool && tool !== 'STICKER') {
+            const {x, y} = getCoords(e);
+            if (isDrawing && (tool === 'CUT' || tool === 'COPY')) {
+                tctx.clearRect(0,0, temp.width, temp.height);
+                tctx.strokeStyle = '#0ff'; tctx.setLineDash([5, 5]); tctx.lineWidth = 2/appState.scale;
+                tctx.strokeRect(window.dragX, window.dragY, x - window.dragX, y - window.dragY);
+                tctx.setLineDash([]);
+            } else if (isDrawing && tool === 'SMOOTH') {
+                tctx.lineCap = 'round'; tctx.lineWidth = appState.penSize / appState.scale;
+                tctx.filter = 'blur(4px)'; tctx.strokeStyle = 'rgba(255,255,255,0.1)';
+                tctx.beginPath(); tctx.moveTo(lastX, lastY); tctx.lineTo(x, y); tctx.stroke();
+                tctx.filter = 'none'; lastX = x; lastY = y;
+            }
+            return;
+        }
+        if (appState.activeMode === 'edit') return;
 
         if (e.touches.length === 1 && isPanning) {
             appState.panX = e.touches[0].clientX - startX;
