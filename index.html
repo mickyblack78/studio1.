@@ -51,7 +51,7 @@
 
         /* STRICT HIGHLIGHT STATES */
         .btn.active { border-color: var(--neon-cyan); color: var(--neon-cyan); box-shadow: 0 0 35px var(--neon-glow); }
-        .btn.qsave-active { border-color: var(--electric-blue) !important; color: var(--electric-blue) !important; box-shadow: 0 0 25px var(--electric-blue) !important; }
+        .btn.qsave-active { border-color: var(--electric-blue) !important; color: var(--electric-blue) !important; box-shadow: 0 0 35px var(--electric-blue) !important; }
         .btn.success { border-color: var(--success-green) !important; color: var(--success-green) !important; box-shadow: 0 0 35px var(--success-green) !important; }
 
         .overlay {
@@ -87,7 +87,7 @@
         .bar-container { position: relative; height: 30px; width: 100%; }
         .bar-bg { position: absolute; top: 11px; width: 100%; height: 8px; border-radius: 4px; border: 1px solid #444; }
         #bar3-bg { background: linear-gradient(to right, #000, gray, #fff); } /* SIZE */
-        #bar2-bg { background: linear-gradient(to right, red, yellow, lime, cyan, blue, magenta, red); } /* SPECTRUM 2 */
+        #bar2-bg { background: linear-gradient(to right, #000, red, yellow, lime, cyan, blue, magenta, red); } /* SPECTRUM 2 */
         #bar1-bg { background: linear-gradient(to right, #000, red, yellow, lime, cyan, blue, magenta, red, #fff); } /* BLACK TO WHITE SPECTRUM */
         .loupe { position: absolute; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; top: 5px; transform: translateX(-50%); display: flex; align-items: center; justify-content: center; font-size: 0px; background: #888; cursor: pointer; box-shadow: 0 0 10px rgba(0,0,0,0.5);}
     </style>
@@ -124,7 +124,7 @@
             <div class="menu-item" onclick="document.getElementById('load-file').click()">LOAD</div>
             <div class="menu-item" onclick="document.getElementById('import-file').click()">IMPORT</div>
         </div>
-        <div class="menu-item" style="background: var(--neon-cyan); color: #000;" onclick="switchOverlay('menu', 'tools')">TOOLS</div>
+        <div class="menu-item" style="background: var(--neon-red); color: #000;" onclick="switchOverlay('menu', 'tools')">TOOLS</div>
         <div class="menu-item" onclick="switchOverlay('menu', 'vault')">VAULTS</div>
     </div>
 </div>
