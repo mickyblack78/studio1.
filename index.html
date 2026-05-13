@@ -423,8 +423,21 @@ function setMode(mode) {
         viewport.style.transform = `translate(${appState.panX}px, ${appState.panY}px) scale(${appState.scale})`;
     }, {passive: false});
 
-    window.addEventListener('touchend', () => {
-        if (isDrawing) { isDrawing = false; pushUndo('stroke'); addRecentColor(appState.penColor); }
+    window.addEventListener('touchend', (e) => {
+        if (isDrawing) { 
+            isDrawing = false; 
+            const tool = appState.activeTool;
+            if (tool === 'CUT' || tool === 'COPY') {
+                const end = getCoords(e.changedTouches[0]);
+                const w = (end.x - window.dragX)*appState.dpr, h = (end.y - window.dragY)*appState.dpr;
+                tctx.clearRect(0,0, temp.width, temp.height);
+                if (Math.abs(w) > 5 && Math.abs(h) > 5) {
+                    window.clipboard = mctx.getImageData(window.dragX*appState.dpr, window.dragY*appState.dpr, w, h);
+                    if (tool === 'CUT') { mctx.clearRect(window.dragX*appState.dpr, window.dragY*appState.dpr, w, h); pushUndo('cut'); }
+                }
+                setMode(null);
+            } else { pushUndo('stroke'); addRecentColor(appState.penColor); }
+        }
         isPanning = false;
     });
     function pushUndo(type) {
