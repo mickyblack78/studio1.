@@ -470,7 +470,7 @@ function triggerQSave() {
         mctx.drawImage(temp, 0, 0, main.width/appState.dpr, main.height/appState.dpr);
         tctx.clearRect(0, 0, temp.width, temp.height);
         pushUndo('qsave');
-        appState.vaults[appState.vaultIdx] = main.toDataURL();
+        appState.vaults[appState.vaultIdx] = main.toDataURL(); localStorage.setItem('vault' + appState.vaultIdx, appState.vaults[appState.vaultIdx]);
         document.getElementById(`img-vault-${appState.vaultIdx}`).src = appState.vaults[appState.vaultIdx];
         appState.vaultIdx = (appState.vaultIdx + 1) % 2; 
         const qBtn = document.getElementById('btn-qsave');
