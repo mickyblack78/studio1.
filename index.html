@@ -463,9 +463,7 @@ function triggerQSave() {
             };
             img.src = event.target.result;
         };
-        reader.readAsDataURL(file);
-        e.target.value = '';
-    });
+        
 
     document.getElementById('import-file').addEventListener('change', function(e) {
         const file = e.target.files[0];
