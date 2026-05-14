@@ -570,6 +570,71 @@ function triggerQSave() {
             img.src = event.target.result;
         
     });
+        document.getElementById('load-file').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        appState.loadedName = file.name.split('.')[0];
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const img = new Image();
+            img.onload = () => {
+                mctx.clearRect(0,0, main.width, main.height);
+                mctx.drawImage(img, 0,0, main.width/appState.dpr, main.height/appState.dpr);
+                pushUndo('load');
+                setMode(null);
+            };
+            img.src = event.target.result;
+        };
+        reader.readAsDataURL(file); 
+        e.target.value = ''; 
+    });
+        
+    document.getElementById('import-file').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const img = new Image();
+            img.onload = () => {
+                const viewW = window.innerWidth / appState.scale;
+                const viewH = window.innerHeight / appState.scale;
+                const ratio = Math.min(viewW / img.width, viewH / img.height) * 0.8; 
+                const drawW = img.width * ratio;
+                const drawH = img.height * ratio;
+                const drawX = (-appState.panX / appState.scale) + (viewW/2 - drawW/2);
+                const drawY = (-appState.panY / appState.scale) + (viewH/2 - drawH/2);
+                tctx.drawImage(img, drawX, drawY, drawW, drawH);
+                pushUndo('import');
+                setMode(null);
+            };
+            img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+        e.target.value = '';
+    });
+
+    document.getElementById('sticker-file').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const img = new Image();
+            img.onload = () => {
+                const viewW = window.innerWidth / appState.scale;
+                const viewH = window.innerHeight / appState.scale;
+                const ratio = Math.min(viewW / img.width, viewH / img.height); 
+                const drawW = img.width * ratio;
+                const drawH = img.height * ratio;
+                const drawX = (-appState.panX / appState.scale) + (viewW/2 - drawW/2);
+                const drawY = (-appState.panY / appState.scale) + (viewH/2 - drawH/2);
+                tctx.drawImage(img, drawX, drawY, drawW, drawH);
+                pushUndo('sticker');
+            };
+            img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+        e.target.value = '';
+    });
         function hslToRgb(h, s, l) {
         h /= 360; s /= 100; l /= 100;
         let r, g, b;
