@@ -440,38 +440,44 @@ function setMode(mode) {
         isPanning = false;
     });
     function pushUndo(type) {
-        if (appState.undoStack.length >= 10) appState.undoStack.shift();
+        if (appState.undoStack.length >= 3) appState.undoStack.shift();
         appState.undoStack.push({
             type: type,
-            tempData: temp.toDataURL(),
-            mainData: main.toDataURL() 
+            tempData: temp.toDataURL() 
         });
     }
+
     function triggerSave() {
-    const link = document.createElement('a');
-    link.download = (appState.loadedName || 'studio_export') + '.png';
-    // Combine canvases if you want both layers saved
-    mctx.drawImage(temp, 0, 0, main.width/appState.dpr, main.height/appState.dpr);
-    link.href = main.toDataURL();
-    link.click();
+        const link = document.createElement('a');
+        link.download = (appState.loadedName || 'studio_export') + '.png';
+        mctx.drawImage(temp, 0, 0, main.width/appState.dpr, main.height/appState.dpr);
+        link.href = main.toDataURL();
+        link.click();
     }
     
     function performUndo() {
-        if (appState.undoStack.length <= 1) { setMode(null); return; }
+        if (appState.undoStack.length <= 1) return;
+        const undoneState = appState.undoStack.pop(); 
         const prevState = appState.undoStack[appState.undoStack.length - 1];
-        const mImg = new Image();
-        mImg.onload = () => {
-            mctx.clearRect(0,0, main.width, main.height);
-            mctx.drawImage(mImg, 0, 0, main.width/appState.dpr, main.height/appState.dpr);
-            const tImg = new Image();
-            tImg.onload = () => {
-                tctx.clearRect(0,0, temp.width, temp.height);
-                tctx.drawImage(tImg, 0, 0, temp.width/appState.dpr, temp.height/appState.dpr);
-            };
-            tImg.src = prevState.tempData;
+
+        if (undoneState.type === 'qsave') {
+            const fallbackVault = appState.vaults[appState.vaultIdx];
+            if (fallbackVault) {
+                const mImg = new Image();
+                mImg.onload = () => {
+                    mctx.clearRect(0,0, main.width, main.height);
+                    mctx.drawImage(mImg, 0,0, main.width/appState.dpr, main.height/appState.dpr);
+                };
+                mImg.src = fallbackVault;
+            }
+        }
+
+        const tImg = new Image();
+        tImg.onload = () => {
+            tctx.clearRect(0,0, temp.width, temp.height);
+            tctx.drawImage(tImg, 0,0, temp.width/appState.dpr, temp.height/appState.dpr);
         };
-        mImg.src = prevState.mainData;
-        setMode(null); 
+        tImg.src = prevState.tempData;
     }
 function triggerQSave() {
         mctx.drawImage(temp, 0, 0, main.width/appState.dpr, main.height/appState.dpr);
