@@ -35,7 +35,7 @@
 
         .dock {
             position: fixed; bottom: var(--safe-zone); left: 50%;
-            transform: translateX(-50%); z-index: 1000;
+            transform: translateX(-50%); z-index: 9999;
             display: flex; gap: 15px; padding: 15px 25px;
             background: var(--panel); border: 1px solid #333;
             border-radius: 60px; box-shadow: 0 0 20px rgba(0,0,0,0.8);
@@ -336,19 +336,22 @@ function setMode(mode) {
                 const p = mctx.getImageData(x*appState.dpr, y*appState.dpr, 1, 1).data;
                 appState.penColor = `rgb(${p[0]},${p[1]},${p[2]})`;
                 document.getElementById('btn-color').style.color = appState.penColor;
-                setMode(null);
             } else if (tool === 'TEXT') {
                 const txt = prompt("Text:");
                 if (txt) { tctx.font = `${appState.penSize*2}px monospace`; tctx.fillStyle = appState.penColor; tctx.fillText(txt, x, y); pushUndo('text'); }
-                setMode(null);
             } else if (tool === 'PASTE' && window.clipboard) {
-                tctx.putImageData(window.clipboard, x*appState.dpr, y*appState.dpr); pushUndo('paste'); setMode(null);
+                createImageBitmap(window.clipboard).then(img => {
+                    tctx.drawImage(img, x, y, img.width/appState.dpr, img.height/appState.dpr);
+                    pushUndo('paste');
+                });
             } else if (tool === 'FILL') {
-                tctx.fillStyle = appState.penColor; tctx.fillRect(0,0, temp.width, temp.height); pushUndo('fill'); setMode(null);
+                tctx.fillStyle = appState.penColor; tctx.fillRect(0,0, temp.width, temp.height); pushUndo('fill');
+    
             } else if (tool === 'CUT' || tool === 'COPY') {
                 window.dragX = x; window.dragY = y; isDrawing = true;
             } else if (tool === 'SMOOTH') {
                 isDrawing = true; lastX = x; lastY = y;
+                
             }
             return;
         }
