@@ -107,17 +107,17 @@
 
 <!-- DOCK -->
 <div class="dock" id="main-dock">
-    <div class="btn" id="btn-menu" onclick="handleDockTap('menu')">MENU</div>
+    <div class="btn" id="btn-menu" onclick="switchOverlay('none', 'menu')">MENU</div>
+    <div class="btn" id="btn-custom" onclick="switchOverlay('none', 'custom')">CUSTOM</div>
     <div class="btn" id="btn-qsave" onclick="triggerQSave()">QSAVE</div>
-    <div class="btn" id="btn-color" onclick="handleDockTap('color')">COLOR</div>
-    <div class="btn" id="btn-edit" onclick="handleDockTap('edit')">EDIT</div>
 </div>
+
 <!-- MENU OVERLAY -->
 <div class="overlay" id="overlay-menu">
     <div class="menu-list">
         <div class="menu-row">
-            <div class="menu-item" onclick="triggerSave()">SAVE</div>
-            <div class="menu-item" onclick="triggerSave()">SAVE AS</div>
+            <div class="menu-item" id="btn-edit" onclick="setMode('edit')">EDIT</div>
+            <div class="menu-item" onclick="switchOverlay('menu', 'color')">BRUSH</div>
         </div>
         <div class="menu-row">
             <div class="menu-item" onclick="document.getElementById('load-file').click()">LOAD</div>
@@ -125,6 +125,37 @@
         </div>
         <div class="menu-item" onclick="switchOverlay('menu', 'tools')">TOOLS</div>
         <div class="menu-item" onclick="switchOverlay('menu', 'vault')">VAULTS</div>
+    </div>
+</div>
+
+<!-- BRUSH & COLOR OVERLAY -->
+<div class="overlay" id="overlay-color">
+    <div style="background: var(--panel); border: 1px solid #333; padding: 20px; border-radius: 20px; width: 90%; max-width: 400px; display: flex; flex-direction: column; align-items: center; gap: 20px;">
+        <canvas id="brush-preview" width="80" height="80" style="border-radius: 50%; border: 2px solid #fff;"></canvas>
+        <input type="color" id="native-color" value="#00ffff" style="width: 100%; height: 50px; background: none; border: none; cursor: pointer;">
+        <div style="font-size: 10px; color: #888; margin-top: -15px;">TAP COLOR ABOVE</div>
+        <div style="width: 100%; text-align: left; color: #888; font-size: 10px;">BRUSH SIZE</div>
+        <input type="range" id="slider-size" min="1" max="100" value="20" style="width: 100%;">
+        <div style="width: 100%; text-align: left; color: #888; font-size: 10px;">DARK TO LIGHT</div>
+        <input type="range" id="slider-lightness" min="-50" max="50" value="0" style="width: 100%;">
+        <div style="width: 100%; text-align: left; color: #888; font-size: 10px;">GLOW</div>
+        <input type="range" id="slider-glow" min="0" max="50" value="0" style="width: 100%;">
+        <div class="btn" style="width: 100%; margin-top: 10px; border-color: #444;" onclick="switchOverlay('color', 'menu')">BACK TO MENU</div>
+    </div>
+</div>
+
+<!-- CUSTOM FAVORITES OVERLAY -->
+<div class="overlay" id="overlay-custom">
+    <div class="menu-list">
+        <div class="menu-row">
+            <div class="menu-item" onclick="setMode('edit')">FAV 1: EDIT</div>
+            <div class="menu-item" onclick="applyTool('STICKER')">FAV 2: STICKER</div>
+        </div>
+        <div class="menu-row">
+            <div class="menu-item" onclick="applyTool('TEXT')">FAV 3: TEXT</div>
+            <div class="menu-item" onclick="triggerSave()">FAV 4: SAVE</div>
+        </div>
+        <div class="menu-item" onclick="switchOverlay('custom', 'menu')">BACK</div>
     </div>
 </div>
 
@@ -145,33 +176,6 @@
         <div class="grid-btn" onclick="switchOverlay('tools', 'menu')">BACK</div>
     </div>
     <div class="recent-colors" id="recent-colors-box"></div>
-</div>
-<!-- COLOR OVERLAY -->
-<div class="overlay" id="overlay-color" style="background: none; pointer-events: none;">
-    <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 40px; pointer-events: auto;">
-        <div id="brush-preview" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #fff;"></div>
-    </div>
-    
-    <div class="sliders-wrap">
-        <!-- TOP: Size -->
-        <div class="bar-container" id="bar3-container">
-            <div style="font-size: 10px; color: #888; margin-bottom: 5px;">SIZE</div>
-            <div class="bar-bg" id="bar3-bg"></div>
-            <div class="loupe" id="loupe3"></div>
-        </div>
-        <!-- MIDDLE: SPECTRUMS -->
-        <div class="bar-container" id="bar2-container">
-            <div style="font-size: 10px; color: #888; margin-bottom: 5px;">SPECTRUMS</div>
-            <div class="bar-bg" id="bar2-bg"></div>
-            <div class="loupe" id="loupe2"></div>
-        </div>
-        <!-- BOTTOM: SPECTRUM -->
-        <div class="bar-container" id="bar1-container">
-            <div style="font-size: 10px; color: #888; margin-bottom: 5px;">SPECTRUM</div>
-            <div class="bar-bg" id="bar1-bg"></div>
-            <div class="loupe" id="loupe1"></div>
-        </div>
-    </div>
 </div>
 
 <!-- VAULT OVERLAY -->
